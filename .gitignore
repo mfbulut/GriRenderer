@@ -1,0 +1,14 @@
+*.glb
+*.spv
+
+*.exe
+*.dll
+*.so
+*.dylib
+*.pdb
+*.ilk
+*.obj
+*.o
+*.a
+*.lib
+*.exp
