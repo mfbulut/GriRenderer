@@ -149,7 +149,7 @@ main :: proc() {
 
 		gfx.camera_set(cam_eye, cam_eye + cam_dir)
 
-		if gfx.key_is_pressed(.F) {
+		if gfx.key_is_down(.F) {
 			b_def := box3d.DefaultBodyDef()
 			b_def.type = .dynamicBody
 			b_def.position = cam_eye + cam_dir * 3.0

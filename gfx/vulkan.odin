@@ -30,7 +30,6 @@ Vertex :: struct #packed {
 
 Gpu_Instance :: struct #packed {
 	model_mat: Mat4,
-	color:     Color,
 	texture:   u32,
 	type:      u32,
 }
@@ -610,7 +609,6 @@ mesh_create :: proc(verts: []Vertex, indices: []u32) -> (mesh: GPU_Mesh) {
 mesh_draw :: proc(
 	m:       GPU_Mesh,
 	model:   Mat4        = linalg.MATRIX4F32_IDENTITY,
-	color:   Color       = {255, 255, 255, 255},
 	texture: GPU_Texture = {},
 ) {
 	assert(len(vks.gpu_instances) < MAX_INSTANCES, "Instance buffer overflow: MAX_INSTANCES exceeded")
@@ -618,7 +616,6 @@ mesh_draw :: proc(
 
 	append(&vks.gpu_instances, Gpu_Instance{
 		model_mat  = model,
-		color      = color,
 		texture    = texture.index,
 	})
 
@@ -659,8 +656,7 @@ skybox_set :: proc(tex: GPU_Texture) {
 }
 
 pipeline_init :: proc() {
-	VERT_SPV := #load("../assets/shaders/shader.vert.spv", []u32)
-	FRAG_SPV := #load("../assets/shaders/shader.frag.spv", []u32)
+	SHADER_SPV := #load("../assets/shaders/shader.spv", []u32)
 
 	pool_sizes := [?]vk.DescriptorPoolSize{
 		{ type = .COMBINED_IMAGE_SAMPLER, descriptorCount = MAX_TEXTURES },
@@ -730,29 +726,19 @@ pipeline_init :: proc() {
 	}
 	vk.CreatePipelineLayout(vks.device, &pipeline_layout_info, nil, &vks.pipeline_layout)
 
-	vert_info := vk.ShaderModuleCreateInfo{
+	shader_info := vk.ShaderModuleCreateInfo{
 		sType    = .SHADER_MODULE_CREATE_INFO,
-		codeSize = len(VERT_SPV) * size_of(u32),
-		pCode    = raw_data(VERT_SPV),
+		codeSize = len(SHADER_SPV) * size_of(u32),
+		pCode    = raw_data(SHADER_SPV),
 	}
-	vert_module: vk.ShaderModule
-	if vk.CreateShaderModule(vks.device, &vert_info, nil, &vert_module) != .SUCCESS {
-		panic("Failed to compile vertex shader module")
-	}
-
-	frag_info := vk.ShaderModuleCreateInfo{
-		sType    = .SHADER_MODULE_CREATE_INFO,
-		codeSize = len(FRAG_SPV) * size_of(u32),
-		pCode    = raw_data(FRAG_SPV),
-	}
-	frag_module: vk.ShaderModule
-	if vk.CreateShaderModule(vks.device, &frag_info, nil, &frag_module) != .SUCCESS {
-		panic("Failed to compile fragment shader module")
+	shader_module: vk.ShaderModule
+	if vk.CreateShaderModule(vks.device, &shader_info, nil, &shader_module) != .SUCCESS {
+		panic("Failed to compile shader module")
 	}
 
 	stages := [?]vk.PipelineShaderStageCreateInfo{
-		{ sType = .PIPELINE_SHADER_STAGE_CREATE_INFO, stage = {.VERTEX}, module = vert_module, pName = "main" },
-		{ sType = .PIPELINE_SHADER_STAGE_CREATE_INFO, stage = {.FRAGMENT}, module = frag_module, pName = "main" },
+		{ sType = .PIPELINE_SHADER_STAGE_CREATE_INFO, stage = {.VERTEX}, module = shader_module, pName = "vs_main" },
+		{ sType = .PIPELINE_SHADER_STAGE_CREATE_INFO, stage = {.FRAGMENT}, module = shader_module, pName = "fs_main" },
 	}
 
 	binding_desc := vk.VertexInputBindingDescription{
@@ -848,8 +834,7 @@ pipeline_init :: proc() {
 		panic("Failed to create graphics pipeline")
 	}
 
-	vk.DestroyShaderModule(vks.device, vert_module, nil)
-	vk.DestroyShaderModule(vks.device, frag_module, nil)
+	vk.DestroyShaderModule(vks.device, shader_module, nil)
 }
 
 vk_swapchain_create :: proc() {
@@ -1190,7 +1175,6 @@ vk_render :: proc() {
 		sky_id := u32(len(vks.gpu_instances))
 		append(&vks.gpu_instances, Gpu_Instance{
 			model_mat = inv_view_proj,
-			color     = {255, 255, 255, 255},
 			texture   = vks.sky_texture.index,
 			type      = 1,
 		})

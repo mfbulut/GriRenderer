@@ -5,9 +5,9 @@ A lightweight vulkan renderer and playground
 ### Prerequisites
 
 - [Odin compiler](https://odin-lang.org/docs/install/)
-- `glslc` (included with the Vulkan SDK)
+- [Slang compiler](https://shader-slang.com/) (`slangc`)
 
 ### Compiling Shaders
-```cmd
-assets\shaders\compile.bat
+```bash
+./assets/shaders/compile.sh
 ```

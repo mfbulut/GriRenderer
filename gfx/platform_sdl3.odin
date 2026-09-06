@@ -227,7 +227,7 @@ update :: proc() -> bool {
 
 	@(static) prev_mouse_locked: bool
 	if window.mouse_locked != prev_mouse_locked {
-		sdl.SetWindowRelativeMouseMode(window_handle, window.mouse_locked)
+		_ = sdl.SetWindowRelativeMouseMode(window_handle, window.mouse_locked)
 		prev_mouse_locked = window.mouse_locked
 	}
 
